@@ -40,6 +40,7 @@ def main(argv):
 	group4.add_argument('-z', action='store_true', help='compress output with g(z)ip [false]')
 	group4.add_argument('-q', metavar = 'INT', type=int, dest='qualbase', required=False, help='(q)uality score offset [33]', default=33)
 	group4.add_argument('-v', action='store_true', help='(v)erbose; print out intermediate messages.')
+	group4.add_argument('--read-name-prefix', dest='read_name_prefix', default = '_from_', required=False, help='Prefix to add to simulated read names (default: "%(default)s")')
 
 	args = parser.parse_args()
 	reffile = args.reference
@@ -57,6 +58,9 @@ def main(argv):
 	readlength = args.readlength
 	readstart = args.readstart
 	readend = args.readend
+
+	read_name_prefix = args.read_name_prefix
+
 	if imin==None:
 		if paired:
 			imin = readlength + 20
@@ -206,7 +210,7 @@ def main(argv):
 			read1,pos,dir,quals1=readGen1(ref,refLen,readLen,gens(),readLen,mx1,insDict,delDict,gQList,bQList,iQList,qualbase)
 			if read1==None or quals1==None:
 				continue
-			head1='@'+'r'+str(i)+'_from_' + fragment_chrom + "_" + str(fragment_start + pos + 1) + "_" + dirtag[dir]
+			head1='@'+'r'+str(i) + read_name_prefix + fragment_chrom + "_" + str(fragment_start + pos + 1) + "_" + dirtag[dir]
 		else:
 			val=random.random()
 			ln1=RL()
@@ -225,8 +229,8 @@ def main(argv):
 				read1='N'*ln1
 				quals1=chr(0+qualbase)*ln1
 				p1='*'
-			head1='@'+'r'+str(i)+'_from_'+ p1 + ":" + p2 + "/1"
-			head2='@'+'r'+str(i)+'_from_'+ p1 + ":" + p2 + "/2"
+			head1='@'+'r'+str(i)+read_name_prefix+ p1 + ":" + p2 + "/1"
+			head2='@'+'r'+str(i)+read_name_prefix+ p1 + ":" + p2 + "/2"
 		wread.write(head1 + '\n')
 		wread.write(read1.upper()+'\n')
 		wread.write('+\n')

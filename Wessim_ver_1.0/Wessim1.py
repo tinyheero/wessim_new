@@ -45,6 +45,7 @@ def main(argv):
 	group4.add_argument('-z', action='store_true', help='compress output with g(z)ip [false]')
 	group4.add_argument('-q', metavar = 'INT', type=int, dest='qualbase', required=False, help='(q)uality score offset [33]', default=33)
 	group4.add_argument('-v', action='store_true', help='(v)erbose; print out intermediate messages.')
+	group4.add_argument('--read-name-prefix', dest='read_name_prefix', default = '_from_', required=False, help='Prefix to add to simulated read names (default: "%(default)s")')
 
 	args = parser.parse_args()
 	reffile = args.reference
@@ -60,6 +61,8 @@ def main(argv):
 	readlength = args.readlength
 	readnumber = args.readnumber
 	threadnumber = args.threadnumber
+
+	read_name_prefix = args.read_name_prefix
 
 	if imin==None:
 		if paired:
@@ -88,6 +91,7 @@ def main(argv):
 	print "Gzip compress?", compress
 	print "Quality base:", qualbase
 	print "Thread number:", threadnumber
+	print "Read name prefix:", read_name_prefix
 	print "Job started at:", strftime("%Y-%m-%d %H:%M:%S", localtime())
 	print "-------------------------------------------"
 	print
