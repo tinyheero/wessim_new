@@ -8,6 +8,7 @@ import numpy
 from time import time
 import argparse
 import math
+import os
 
 inds={'A':0,'T':1,'G':2,'C':3,'N':4,'a':0,'t':1,'g':2,'c':3,'n':4}
 
@@ -22,8 +23,8 @@ def main(argv):
 	group2.add_argument('-f', metavar = 'INT', type=int, dest='fragsize', required=False, help='mean (f)ragment size. this corresponds to insert size when sequencing in paired-end mode. [200]', default=200)
 	group2.add_argument('-d', metavar = 'INT', type=int, dest='fragsd', required=False, help='standard (d)eviation of fragment size [50]', default=50)
 	group2.add_argument('-m', metavar = 'INT', type=int, dest='fragmin', required=False, help='(m)inimum fragment length [read_length + 20 for single-end, 2*read_length + 20 for paired-end]')
-	group2.add_argument('-y', metavar = 'PERCENT',type=int, dest='bind', required=False, help='minimum required fraction of probe match to be h(y)bridized [50]', default=50) 
-	
+	group2.add_argument('-y', metavar = 'PERCENT',type=int, dest='bind', required=False, help='minimum required fraction of probe match to be h(y)bridized [50]', default=50)
+
 	group3 = parser.add_argument_group('Parameters for sequencing')
 	group3.add_argument('-p', action='store_true', help='generate paired-end reads [single]')
 	group3.add_argument('-n', help='do not care')
@@ -45,7 +46,7 @@ def main(argv):
 	regionfile = args.region
 	faoutfile = regionfile + ".fa"
 	abdoutfile = regionfile + ".abd"
-	
+
 	isize = args.fragsize
 	isd = args.fragsd
 	imin = args.fragmin
@@ -55,7 +56,7 @@ def main(argv):
 	paired = args.p
 	readlength = args.readlength
 	readstart = args.readstart
-	readend = args.readend		
+	readend = args.readend
 	if imin==None:
 		if paired:
 			imin = readlength + 20
@@ -63,7 +64,7 @@ def main(argv):
 			imin = readlength + 20
 	if isize < imin:
 		print "too small mean fragment size (" + str(isize) + ") compared to minimum length (" + str(imin) + "). Increase it and try again."
-		sys.exit(0) 
+		sys.exit(0)
 	model = args.model
 
 	f = open(faoutfile)
@@ -135,7 +136,7 @@ def main(argv):
 		#deletions
 		delDict=mkDels(mx1,delD1)
 	gens=genRef('')
-	gQList=[]			 
+	gQList=[]
 	for i in (gQualL):
 		gL=[]
 		keys=i.keys()
@@ -155,7 +156,7 @@ def main(argv):
 	#choose qualities for inserts
 	iQList=[]
 	for i in (iQualL):
-		iL=[] 
+		iL=[]
 		keys=i.keys()
 		keys.sort()
 		for k in keys:
@@ -179,7 +180,7 @@ def main(argv):
 #	u1, u2, newSD, m1, m2 = generateMatrices(isd, isize, gcVector)
 	gcSD = numpy.std(gcVector)
 	newSD = isd*2
-	
+
 	### Generate!
 	count = 0
 	i = readstart
@@ -199,7 +200,7 @@ def main(argv):
 		gccount = getGCCount(seq)
 		keep = H2(refLen, gccount, isize, newSD, isd, gcSD,mvnTable)
 		if not keep:
-			continue		
+			continue
 		if not paired:
 			readLen=RL()
 			read1,pos,dir,quals1=readGen1(ref,refLen,readLen,gens(),readLen,mx1,insDict,delDict,gQList,bQList,iQList,qualbase)
@@ -263,7 +264,7 @@ def getFragment(matchdic, key, mu, sigma, lower, bind):
 	ins = getInsertLength(mu, sigma, lower)
 	match = matchdic[key]
 	pickedproberegion = pickproberegion(match)
-	pickedfragment = pickFragment(pickedproberegion, ins, bind)	
+	pickedfragment = pickFragment(pickedproberegion, ins, bind)
 	return pickedfragment
 
 def getFragmentUniform(abdlist, seqlist, last, mu, total, bind):
@@ -289,7 +290,7 @@ def getInsertLength(mu, sigma, lower):
 		length = int(random.gauss(mu, sigma))
 		if length >= lower:
 			return length
-	
+
 def pickproberegion(match):
 	scores = []
 	for m in match:
@@ -337,7 +338,7 @@ def getGCCount(seq):
 	for nuc in seq:
 		if nuc=="G" or nuc=="C" or nuc=="g" or nuc=="c":
 			gc += 1
-	return gc	
+	return gc
 
 def readSimpleSingle(ref, rlen, err):
 	reflen = len(ref)
@@ -367,13 +368,13 @@ def comp(sequence):
 	return cSeq
 
 def usage():
-	print ">python x3.probestatistics reference.fa probe.fa probealign.psl readoutput.fastq.gz" 
+	print ">python x3.probestatistics reference.fa probe.fa probealign.psl readoutput.fastq.gz"
 	sys.exit()
 
 def test(filename):
 	mx1,mx2,insD1,insD2,delD1,delD2,intervals,gQualL,bQualL,iQualL,mates,rds,rdLenD = parseModel(filename, paired, 100)
 	sys.exit(1)
-	
+
 def parseModel(gzipFile,paired,readlen):
 	"""prepares error models for input to mkErrors."""
 	file=gzip.open(gzipFile,'rb')
@@ -382,7 +383,7 @@ def parseModel(gzipFile,paired,readlen):
 		if readlen!='d' and readlen>modReadLen:
 			print "Inappropriate read length chosen for model. Maximum for this model: " + str(modReadLen)
 			file.close()
-			sys.exit() 
+			sys.exit()
 		mx1=cPickle.load(file)
 		mx2=cPickle.load(file)
 		insD1=cPickle.load(file)
@@ -403,7 +404,7 @@ def parseModel(gzipFile,paired,readlen):
 		if readlen!='d' and readlen>modReadLen:
 			print "Inappropriate read length chosen for model. Maximum for this model: " + str(modReadLen)
 			file.close()
-			sys.exit() 
+			sys.exit()
 		mx=cPickle.load(file)
 		insD=cPickle.load(file)
 		delD=cPickle.load(file)
@@ -413,7 +414,7 @@ def parseModel(gzipFile,paired,readlen):
 		readCount=cPickle.load(file)
 		rdLenD=cPickle.load(file)
 		file.close()
-		return mx,insD,delD,gQualL,bQualL,iQualL,readCount,rdLenD 
+		return mx,insD,delD,gQualL,bQualL,iQualL,readCount,rdLenD
 
 def mkInserts(mx,insD):
 	"""Returns a dictionary consisting of compiled functions to make inserts."""
@@ -424,11 +425,11 @@ def mkInserts(mx,insD):
 		indicies=p.split('.')
 		tot=mx[int(indicies[0])][int(indicies[1])][int(indicies[2])][int(indicies[3])][int(indicies[4])][int(indicies[5])][5]
 		insertKeys=insD[p].keys()
-		insertKeys.sort() 
+		insertKeys.sort()
 		insertList=[]
 		iSum=0
 		for i in insertKeys:
-			insertList.append((i,insD[p][i])) 
+			insertList.append((i,insD[p][i]))
 			iSum+=0
 		insertList.append(('',tot-iSum))
 		insert=bisect_choiceTUP(insertList)
@@ -443,7 +444,7 @@ def mkDels(mx,delD):
 	for p in posKeys:
 		indicies=p.split('.')
 		tot=mx[int(indicies[0])][int(indicies[1])][int(indicies[2])][int(indicies[3])][int(indicies[4])][int(indicies[5])][5]
-		items=delD[p] 
+		items=delD[p]
 		items.reverse()
 		items.append(tot-sum(items))
 		items.reverse()
@@ -503,7 +504,7 @@ def readGenp(ref, refLen, readLen1, readLen2, genos, mx1, insD1, delD1, gQ, bQ, 
 	cRef = comp(ref)[::-1]
 	extrabase = 10
 	ind1 = 0
-	ind2 = refLen - readLen2 
+	ind2 = refLen - readLen2
 	end1 = readLen1 + extrabase
 	end2 = ind2 + readLen2
 	dir1=1
@@ -540,14 +541,14 @@ def readGen2(reference,cRef,pos,dir,readLen,genos,inter,mx2,insD2,delD2,gQ,bQ,iQ
 		if genos!='':
 			read=mutate(read,start,genos,refLen,1,readPlus,hd)
 		read,quals=mkErrors(read,readLen,mx2,insD2,delD2,gQ,bQ,iQ,qual)
-		
+
 	return read, quals
 
 def mutate(read,ind,gens,refLen,dir,readLn,hd):
 	"""Adds predetermined mutations to reads."""
 	d={'A':'T','T':'A','C':'G','G':'C','a':'t','t':'a','c':'g','g':'c','N':'N','n':'n'}
 	if gens=={}:
-		return read	
+		return read
 	else:
 		chroms=gens.keys()
 		if hd not in chroms:
@@ -560,7 +561,7 @@ def mutate(read,ind,gens,refLen,dir,readLn,hd):
 						read1=read[:p-(ind+1)]+gens[hd][p]
 						read1=read1+read[p-ind:]
 						read=read1
-					elif p<=ind+readLn-refLen: 
+					elif p<=ind+readLn-refLen:
 						read1=read[:refLen-ind+p-1]+gens[hd][p]
 						read1+=read[refLen-ind+p:]
 						read=read1
@@ -582,7 +583,7 @@ def genRef(ref):
 	def r():
 		return ref
 	return r
-	
+
 def mkErrors(read,readLen,mx,insD,delD,gQ,bQ,iQ,qual):
 	"""Adds random errors to read."""
 	pos=0
@@ -605,9 +606,9 @@ def mkErrors(read,readLen,mx,insD,delD,gQ,bQ,iQ,qual):
 	d2=inds[prev[2]]
 	d3=inds[prev[1]]
 	d4=inds[prev[0]]
-	d5=inds[after]	
+	d5=inds[after]
 	pos+=1
-	while pos<=readLen and pos<len(read)-4:				 
+	while pos<=readLen and pos<len(read)-4:
 		d0 = pos
 		d4 = d3
 		d3 = d2
@@ -618,7 +619,7 @@ def mkErrors(read,readLen,mx,insD,delD,gQ,bQ,iQ,qual):
 		Mprobs=mx[d0][d1][d2][d3][d4][d5]
 		tot=float(Mprobs[5])
 		if not tot==0:
-			Mprobs = Mprobs/tot		
+			Mprobs = Mprobs/tot
 		val=random.random()
 		a=Mprobs[0]
 		t=Mprobs[1]+a
@@ -674,7 +675,7 @@ def mkErrors(read,readLen,mx,insD,delD,gQ,bQ,iQ,qual):
 				if success==False:
 					qualslist.append(chr(2+qual))
 		elif val>a:
-			read=read[:pos+3]+'T'+read[pos+4:] 
+			read=read[:pos+3]+'T'+read[pos+4:]
 			bPos=pos-1
 			while bPos>=0:
 				try:
@@ -723,7 +724,7 @@ def mkErrors(read,readLen,mx,insD,delD,gQ,bQ,iQ,qual):
 	if len(quals)!=len(read):
 		print "unexpected stop"
 		return None, None
-	return read,quals	  
+	return read,quals
 
 def generateM(sd, newSD, x,t, gcVector):
 	gcSD = numpy.std(gcVector)*(newSD/sd)
@@ -744,7 +745,7 @@ def generateMatrices(sd,x, gcVector):
 	longAxis2 = M1*e2
 	longAxis = longAxis1
 	if norm(longAxis1) < norm(longAxis2):
-		longAxis = longAxis2		
+		longAxis = longAxis2
 	M2 = []
 	m2 = []
 	newSD = sd;
@@ -761,8 +762,8 @@ def getProb(l,n,x,sd,gcSD,alpha, mvnpdf):
 	p1 = mvnpdf[0][int(cut((l-x)/sd)*100)]
 	p2 = mvnpdf[0][int(cut((n-(x/2+(l-x)*alpha))/(l*gcSD/x))*100)]
 	return float(p1)*float(p2)
-	
-	
+
+
 def H2(l, n, x, sd1, sd2, gcSD, mvnpdf):
 	bp = getProb(l,n,x,sd1,gcSD,.5,mvnpdf)
 	ap = getProb(l,n,x,sd2,gcSD,9/7,mvnpdf)
@@ -770,13 +771,13 @@ def H2(l, n, x, sd1, sd2, gcSD, mvnpdf):
 
 	r = random.random()
 	toKeep = v > r
-	return toKeep	
-	
-	
+	return toKeep
+
+
 def norm(x):
 	y=x[0]*x[0]+x[1]*x[1]
 	return math.sqrt(y)
-	
+
 def cut(x):
 	y = abs(x)
 	if y >5.00:
@@ -792,13 +793,13 @@ def H(l, n, x, u1, u2, mvnpdf):
 	p1 = mvnpdf[int(cut(v1[0])*100)][int(cut(v1[1])*100)]
 	p2 = mvnpdf[int(cut(v2[0])*100)][int(cut(v2[1])*100)]
 	v = float(p1)/float(p2)
-	
+
 	r = random.random()
 	toKeep = v > r
 	return toKeep
-	
+
 def readmvnTable():
-	f = open("lib/mvnTable.txt")
+	f = open(os.path.dirname(os.path.abspath(__file__)) + "/lib/mvnTable.txt")
 	context = f.read()
 	lines = context.split("\n")
 	mvnTable = []
@@ -812,7 +813,7 @@ def readmvnTable():
 
 def getIndex(abdlist, pos):
 	i = bisect.bisect_right(abdlist, pos)
-	return i 
+	return i
 
 if __name__=="__main__":
 	main(sys.argv[1:])

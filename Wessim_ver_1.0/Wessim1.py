@@ -1,3 +1,4 @@
+#!/usr/bin/env python2
 import sys
 import random
 import bisect
@@ -30,14 +31,14 @@ def main(argv):
 	group2.add_argument('-f', metavar = 'INT', type=int, dest='fragsize', required=False, help='mean (f)ragment size. this corresponds to insert size when sequencing in paired-end mode. [200]', default=200)
 	group2.add_argument('-d', metavar = 'INT', type=int, dest='fragsd', required=False, help='standard (d)eviation of fragment size [50]', default=50)
 	group2.add_argument('-m', metavar = 'INT', type=int, dest='fragmin', required=False, help='(m)inimum fragment length [read_length + 20]')
-	group2.add_argument('-x', metavar = 'INT',type=int, dest='slack', required=False, help='slack margin of the given boundaries [0]', default=0) 
-	
+	group2.add_argument('-x', metavar = 'INT',type=int, dest='slack', required=False, help='slack margin of the given boundaries [0]', default=0)
+
 	group3 = parser.add_argument_group('Parameters for sequencing')
 	group3.add_argument('-p', action='store_true', help='generate paired-end reads [single]')
-	group3.add_argument('-n', metavar = 'INT', type=int, dest='readnumber', required=True, help='total (n)umber of reads')	
+	group3.add_argument('-n', metavar = 'INT', type=int, dest='readnumber', required=True, help='total (n)umber of reads')
 	group3.add_argument('-l', metavar = 'INT', type=int, dest='readlength', required=True, help='read (l)ength (bp)')
 	group3.add_argument('-M', metavar = 'FILE', dest='model', required=True, help='GemSim (M)odel file (.gzip)')
-	group3.add_argument('-t', metavar = 'INT', type=int, dest='threadnumber', required=False, help='number of (t)hreaded subprocesses [1]', default=1) 
+	group3.add_argument('-t', metavar = 'INT', type=int, dest='threadnumber', required=False, help='number of (t)hreaded subprocesses [1]', default=1)
 
 	group4 = parser.add_argument_group('Output options')
 	group4.add_argument('-o', metavar = 'FILE', dest='outfile', help='(o)utput file header. ".fastq.gz" or ".fastq" will be attached automatically. Output will be splitted into two files in paired-end mode', required=True)
@@ -48,7 +49,7 @@ def main(argv):
 	args = parser.parse_args()
 	reffile = args.reference
 	regionfile = args.region
-	 
+
 	isize = args.fragsize
 	isd = args.fragsd
 	imin = args.fragmin
@@ -57,9 +58,9 @@ def main(argv):
 	getRegionVector(reffile, regionfile, slack)
 	paired = args.p
 	readlength = args.readlength
-	readnumber = args.readnumber		
+	readnumber = args.readnumber
 	threadnumber = args.threadnumber
-	
+
 	if imin==None:
 		if paired:
 			imin = readlength + 20
@@ -67,15 +68,15 @@ def main(argv):
 			imin = readlength + 20
 	if isize < imin:
 		print "too small mean fragment size (" + str(isize) + ") compared to minimum length (" + str(imin) + "). Increase it and try again."
-		sys.exit(0) 
+		sys.exit(0)
 	model = args.model
-		
+
 	outfile = args.outfile
 	compress = args.z
 	qualbase = args.qualbase
 	verbose = args.v
 
-	print 
+	print
 	print "-------------------------------------------"
 	print "Reference:", reffile
 	print "Region file:", regionfile
@@ -91,11 +92,13 @@ def main(argv):
 	print "-------------------------------------------"
 	print
 
+	cur_script_path = os.path.dirname(os.path.abspath(__file__))
+
 	processes = []
 	for t in range(0, threadnumber):
 		readstart = int(float(readnumber) / float(threadnumber) * t) + 1
 		readend = int(float(readnumber) / float(threadnumber) * (t+1))
-		command = "python __sub_wessim1.py " + arguline + " -1 " + str(readstart) + " -2 " + str(readend) + " -i " + str(t+1)
+		command = "python2 " + cur_script_path + "/" "__sub_wessim1.py " + arguline + " -1 " + str(readstart) + " -2 " + str(readend) + " -i " + str(t+1)
 		p = Process(target=subprogram, args=(command, t+1))
 		p.start()
 		processes.append(p)
@@ -192,6 +195,6 @@ def getRegionVector(fastafile, regionfile, slack):
 	f.close()
 	wfa.close()
 	wabd.close()
-	
+
 if __name__=="__main__":
 	main(sys.argv[1:])
