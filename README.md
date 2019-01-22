@@ -1,12 +1,16 @@
 ### Introduction
+
 **Wessim** is a simulator for a targeted resequencing as generally known as exome sequencing. Wessim basically generates a set of *artificial* DNA fragments for next generation sequencing (NGS) read simulation. In the targeted resequencing, we constraint the genomic regions that are used to generated DNA fragments to be only a part of the entire genome; they are usually exons and/or a few introns and untranslated regions (UTRs).
 
 ### Install Wessim
+
 Download Wessim using the links in this page, or go to https://github.com/sak042/Wessim   
 To run Wessim, Python 2.7 or later is required. To install Python, go to http://python.org/
 
 ### Requirements
+
 The following programs are required to run Wessim or to prepare input files:
+
 * **pysam** library: go to http://code.google.com/p/pysam/ to install pysam
 * **numpy** library: go to http://numpy.scipy.org/ to install numpy
 * **gfServer** and **gfClient**: In probe hybridization mode, Wessim runs more than 100,000 queries against the reference genome. This essentially requires a local blat server. gfServer and gfClient are pre-compiled programs for establishing private blat server on your computer. go to http://hgdownload.cse.ucsc.edu/admin/exe/ to download gfServer and gfClient (and set your local path to access the two programs anywhere). For more details about the tools, please refer to http://genome.ucsc.edu/FAQ/FAQblat.html#blat5
@@ -15,6 +19,7 @@ The following programs are required to run Wessim or to prepare input files:
 * **GemSim** error models: Wessim uses GemSim's empirical error models for NGS read generation. Go to GemSim's project page (http://sourceforge.net/projects/gemsim/) to download GemSim. You will find several model files (e.g. ill100v4_p.gzip) under 'models' directory. Save them and remember their location.
  
 ### Preparing Input Files 
+
 Wessim requires two major inputs. One is the sample genome sequence, and the other is the target region information.
 * **Sample genome sequence**: This is a FASTA file (e.g. ref.fa). You will need to index the file and generate .2bit
 <pre><code>
@@ -26,6 +31,7 @@ Wessim requires two major inputs. One is the sample genome sequence, and the oth
     2. **Probe sequences**: Probe sequences are available for SureSelect platforms in the SureDesign homepage (https://earray.chem.agilent.com/suredesign/) (see above). Usually those files are named "[platform]_probe.txt"
 
 ### Running Wessim
+
 There are two main scripts in the package - Wessim1.py and Wessim2.py. You will use Wessim1 if you are using a BED file for target regions (ideal target approach). However,  it is highly recommended to use Wessim2 (probe hybridization approach) when the probe sequence is available; it is much more realistic and recovers the statistics of real data. Two other scripts that start with 'Prep' are used to preparing Wessim2 inputs. You can ignore remaining scripts that start with '__sub'; main Wessim programs will execute these sub scripts automatically.
 
 The basic synopsis of Wessim1 is like below:
@@ -102,7 +108,6 @@ Output options:
   -v          (v)erbose; print out intermediate messages.
 ```
 
-### Support or Contact
-For GitHub use, check out the documentation at http://help.github.com/pages or contact support@github.com and well help you sort it out.
+### Versions
 
-
+* 1.0.0: Direct copy from https://github.com/sak042/Wessim
