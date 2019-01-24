@@ -199,8 +199,13 @@ def main(argv):
 		fragment_chrom = headervalues[0]
 		fragment_start = int(headervalues[1])
 		fragment_end = int(headervalues[2])
-		if refLen<imin:
+
+		# If the target region is smaller than the fragment size, then skip
+		# this read generation step
+		if refLen < isize:
 			continue
+		#if refLen<imin:
+		#	continue
 		gccount = getGCCount(seq)
 		keep = H2(refLen, gccount, isize, newSD, isd, gcSD,mvnTable)
 		if not keep:
@@ -216,7 +221,13 @@ def main(argv):
 			ln1=RL()
 			ln2=RL()
 			inter = isize
-			read1,pos1,dir1,quals1,read2,pos2,dir2,quals2 = readGenp(ref,refLen,ln1,ln2,gens(),mx1,insDict1,delDict1,gQList,bQList,iQList,qualbase)
+			read1,pos1,dir1,quals1,read2,pos2,dir2,quals2 = readGenp2(ref,refLen,ln1,ln2,inter,mx1,insDict1,delDict1,gQList,bQList,iQList,qualbase)
+
+			if read1 == None or quals1 == None:
+				continue
+			if read2 == None or quals2 == None:
+				continue
+
 			p1 = fragment_chrom + "_" + str(fragment_start + pos1 + 1) + "_" + dirtag[dir1]
 			p2 = fragment_chrom + "_" + str(fragment_start + pos2 + 1) + "_" + dirtag[dir2]
 			if val > unAlign0+unAlign1:
@@ -231,6 +242,7 @@ def main(argv):
 				p1='*'
 			head1='@'+'r'+str(i)+read_name_prefix+ p1 + ":" + p2 + "/1"
 			head2='@'+'r'+str(i)+read_name_prefix+ p1 + ":" + p2 + "/2"
+
 		wread.write(head1 + '\n')
 		wread.write(read1.upper()+'\n')
 		wread.write('+\n')
@@ -242,7 +254,7 @@ def main(argv):
 			wread2.write(quals2 + "\n")
 		count +=1
 		i+=1
-		if count % 1000000 == 0 and count!=0:
+		if count % 1000000 == 0 and count!=1:
 			t1 = time()
 			print "[subprocess " + str(subid) + "]: " + str(count) + " reads have been generated... in %f secs" % (t1-t0)
 
@@ -502,6 +514,57 @@ def readGen1(ref,refLen,readLen,genos,inter,mx1,insD1,delD1,gQ,bQ,iQ,qual):
 	if dir==2:
 		ind=ind + extrabase
 	return read, ind, dir, quals
+
+def readGenp2(ref, refLen, readLen1, readLen2, frag_size, mx1, insD1, delD1, gQ, bQ, iQ, qual):
+	"""
+	This is a modified version of readGenp which allows for the random
+	generation of a DNA fragment inside a target region
+
+	Args:
+		ref: Sequence of the target region
+		refLen: Length of the target region
+		frag_size: Fragment size (aka. insert size)
+	"""
+
+	#cRef = comp(ref)[::-1]
+	#extrabase = 10
+
+	# Randomly choose a start position for the first read in the target region.
+	ind1 = random.randint(0, refLen - frag_size)
+	ind2 = ind1 + frag_size - readLen2
+
+	if ind2 < ind1:
+		sys.exit("[readGen2]: Start position of read 2 is smaller than read 1")
+
+	end1 = ind1 + readLen1
+	end2 = ind2 + readLen2
+
+	if end1 > refLen or end2 > refLen:
+		sys.exit("[readGen2]: End position of read 1 or 2 is greater than reference length")
+
+	# Direction of reads
+	dir1=1
+	dir2=2
+
+	# Grab the sequence of the reads
+	read1 = ref[ind1:end1]
+
+	if read1 == None:
+		print(ref)
+		print(ind1)
+		print(end2)
+
+	read2 = comp(ref[ind2:end2])[::-1]
+
+	read1, quals1 = mkErrors(read1, readLen1, mx1, insD1, delD1, gQ, bQ, iQ, qual)
+	read2, quals2 = mkErrors(read2, readLen2, mx1, insD1, delD1, gQ, bQ, iQ, qual)
+	pairorder = random.randint(1,2)
+	if pairorder==1:
+		return read1, ind1, dir1, quals1, read2, ind2, dir2, quals2
+	else:
+		return read2, ind2, dir2, quals2, read1, ind1, dir1, quals1
+
+
 
 def readGenp(ref, refLen, readLen1, readLen2, genos, mx1, insD1, delD1, gQ, bQ, iQ, qual):
 	"""Generates a pair of reads from given DNA fragment."""
