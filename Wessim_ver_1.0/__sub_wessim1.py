@@ -200,12 +200,9 @@ def main(argv):
 		fragment_start = int(headervalues[1])
 		fragment_end = int(headervalues[2])
 
-		# If the target region is smaller than the fragment size, then skip
-		# this read generation step
-		if refLen < isize:
+		if refLen < imin:
 			continue
-		#if refLen<imin:
-		#	continue
+
 		gccount = getGCCount(seq)
 		keep = H2(refLen, gccount, isize, newSD, isd, gcSD,mvnTable)
 		if not keep:
@@ -220,8 +217,13 @@ def main(argv):
 			val=random.random()
 			ln1=RL()
 			ln2=RL()
-			inter = isize
-			read1,pos1,dir1,quals1,read2,pos2,dir2,quals2 = readGenp2(ref,refLen,ln1,ln2,inter,mx1,insDict1,delDict1,gQList,bQList,iQList,qualbase)
+
+			# Generate paired-end reads
+			read1,pos1,dir1,quals1,read2,pos2,dir2,quals2 = readGenp2(
+				ref, refLen, ln1, ln2,
+				isize, isd, imin,
+				mx1, insDict1, delDict1, gQList, bQList, iQList, qualbase
+			)
 
 			if read1 == None or quals1 == None:
 				continue
@@ -302,6 +304,18 @@ def getFragmentUniform(abdlist, seqlist, last, mu, total, bind):
 	return result
 
 def getInsertLength(mu, sigma, lower):
+	"""
+	Get insert length.
+
+	This sample an insert length from a normal distribution.
+
+	Args:
+		mu: Mean insert length
+		sigma: Standard deviation of insert length
+	"""
+
+	# Keep sampling from normal distribution until an insert length is greater
+	# than the lower value
 	while True:
 		length = int(random.gauss(mu, sigma))
 		if length >= lower:
@@ -515,46 +529,57 @@ def readGen1(ref,refLen,readLen,genos,inter,mx1,insD1,delD1,gQ,bQ,iQ,qual):
 		ind=ind + extrabase
 	return read, ind, dir, quals
 
-def readGenp2(ref, refLen, readLen1, readLen2, frag_size, mx1, insD1, delD1, gQ, bQ, iQ, qual):
+def readGenp2(ref, refLen, readLen1, readLen2, isize, isd, imin, mx1, insD1, delD1, gQ, bQ, iQ, qual):
 	"""
 	This is a modified version of readGenp which allows for the random
-	generation of a DNA fragment inside a target region
+	generation of a DNA fragment inside a target region.
 
 	Args:
-		ref: Sequence of the target region
-		refLen: Length of the target region
-		frag_size: Fragment size (aka. insert size)
+		ref: Sequence of the target region.
+		refLen: Length of the target region.
+		readLen1: Length of read 1.
+		readLen2: Length of read 2.
+		isize: Insert size.
+		isd: Standard deviation of the insert size.
+		imin: Minimum value of the insert size. This is to ensure no insert size
+			is smaller than this.
 	"""
 
 	#cRef = comp(ref)[::-1]
-	#extrabase = 10
+	extrabase = 10
+
+	# Determine the highest possible start position of read 1. This is to
+	# ensure that the starting position of the insert is never above this
+	# value.
+	max_start = -1
+	while max_start < 0:
+		insert_len = getInsertLength(isize, isd, imin)
+		max_start = refLen - insert_len + 1
 
 	# Randomly choose a start position for the first read in the target region.
-	ind1 = random.randint(0, refLen - frag_size)
-	ind2 = ind1 + frag_size - readLen2
+	# This position will never be higer than the maxstart. This position will
+	# start site of your insert.
+	insert_start = random.randint(0, max_start)
 
-	if ind2 < ind1:
-		sys.exit("[readGen2]: Start position of read 2 is smaller than read 1")
-
-	end1 = ind1 + readLen1
-	end2 = ind2 + readLen2
-
-	if end1 > refLen or end2 > refLen:
-		sys.exit("[readGen2]: End position of read 1 or 2 is greater than reference length")
+	insert = ref[insert_start:(insert_start+insert_len)]
+	comp_insert = comp(insert)[::-1]
 
 	# Direction of reads
 	dir1=1
 	dir2=2
 
-	# Grab the sequence of the reads
-	read1 = ref[ind1:end1]
+	if readLen1 > insert_len:
+		readLen1 = insert_len
+	if readLen2 > insert_len:
+		readLen2 = insert_len
 
-	if read1 == None:
-		print(ref)
-		print(ind1)
-		print(end2)
+	# Start position of read 1 and 2 with respect to the insert sequence,
+	# respectively
+	ind1 = 0
+	ind2 = insert_start + insert_len - readLen2
 
-	read2 = comp(ref[ind2:end2])[::-1]
+	read1 = insert[0:readLen1]
+	read2 = comp_insert[0:readLen2]
 
 	read1, quals1 = mkErrors(read1, readLen1, mx1, insD1, delD1, gQ, bQ, iQ, qual)
 	read2, quals2 = mkErrors(read2, readLen2, mx1, insD1, delD1, gQ, bQ, iQ, qual)
@@ -563,8 +588,6 @@ def readGenp2(ref, refLen, readLen1, readLen2, frag_size, mx1, insD1, delD1, gQ,
 		return read1, ind1, dir1, quals1, read2, ind2, dir2, quals2
 	else:
 		return read2, ind2, dir2, quals2, read1, ind1, dir1, quals1
-
-
 
 def readGenp(ref, refLen, readLen1, readLen2, genos, mx1, insD1, delD1, gQ, bQ, iQ, qual):
 	"""Generates a pair of reads from given DNA fragment."""
@@ -676,6 +699,7 @@ def mkErrors(read,readLen,mx,insD,delD,gQ,bQ,iQ,qual):
 	d5=inds[after]
 	pos+=1
 	while pos<=readLen and pos<len(read)-4:
+		deleted = "no"
 		d0 = pos
 		d4 = d3
 		d3 = d2
@@ -768,6 +792,8 @@ def mkErrors(read,readLen,mx,insD,delD,gQ,bQ,iQ,qual):
 		if index in delD:
 			delete=delD[index]()
 			read=read[:pos+4]+read[pos+delete+4:]
+			if delete > 0:
+				deleted = "yes"
 		if index in insD:
 			insert=insD[index]()
 			read=read[:pos+4]+insert+read[pos+4:]
@@ -784,7 +810,8 @@ def mkErrors(read,readLen,mx,insD,delD,gQ,bQ,iQ,qual):
 						qualslist.append(chr(2+qual))
 			pos+=len(insert)
 		pos+=1
-	qualslist.append(qualslist[-1])
+		if (deleted == 'no') or (pos == len(read) - 4):
+			qualslist.append(qualslist[-1])
 	readback = read
 	read=read[4:readLen+4]
 	quals=''.join(qualslist)[:readLen]
