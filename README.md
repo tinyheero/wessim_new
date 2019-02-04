@@ -20,26 +20,75 @@ The following programs are required to run Wessim or to prepare input files:
  
 ### Preparing Input Files 
 
-Wessim requires two major inputs. One is the sample genome sequence, and the other is the target region information.
-* **Sample genome sequence**: This is a FASTA file (e.g. ref.fa). You will need to index the file and generate .2bit
-<pre><code>
->samtools faidx ref.fa
->faToTwoBit ref.fa ref.2bit
-</code></pre>
-* **Target region information**: Target regions can be specified by two different ways.
-    1. **Ideal targets**: In ideal target mode, you will provide a list of genomic coordinates in a BED  file (e.g. chr1   798833 799125). Ideal targets of major exome capture platforms are freely available from vendor's website. For Agilent's SureSelect platforms, go to https://earray.chem.agilent.com/suredesign/ . You must register at their site. After logging in, go to Find Designs and select Agilent Catalog at the menu tab. You will be able to download all information of currently available platforms including ideal target BED files and probe sequence text files.   For NimbleGen's SeqCap go to http://www.nimblegen.com/products/seqcap/index.html and find BED files under Design and Annotation Files. 
-    2. **Probe sequences**: Probe sequences are available for SureSelect platforms in the SureDesign homepage (https://earray.chem.agilent.com/suredesign/) (see above). Usually those files are named "[platform]_probe.txt"
+Wessim requires two major inputs. One is the sample genome sequence, and the 
+other is the target region information.
+
+#### Sample genome sequence
+
+This is a FASTA file (e.g. ref.fa). You will need to index the file and generate 
+.2bit:
+
+```bash
+samtools faidx ref.fa
+faToTwoBit ref.fa ref.2bit
+```
+
+##### Target region information
+
+Target regions can be specified by two different ways.
+
+1. **Ideal targets**: In ideal target mode, you will provide a list of genomic 
+  coordinates in a BED file (e.g. chr1   798833 799125). Ideal targets of major 
+  exome capture platforms are freely available from vendor's website. For 
+  Agilent's SureSelect platforms, go to https://earray.chem.agilent.com/suredesign/. 
+  You must register at their site. After logging in, go to Find Designs and select 
+  Agilent Catalog at the menu tab. You will be able to download all information of 
+  currently available platforms including ideal target BED files and probe 
+  sequence text files. For NimbleGen's SeqCap go to 
+  http://www.nimblegen.com/products/seqcap/index.html and find BED files under 
+  Design and Annotation Files. 
+
+1. **Probe sequences**: Probe sequences are available for SureSelect platforms 
+in the SureDesign homepage (https://earray.chem.agilent.com/suredesign/) (see 
+above). Usually those files are named "[platform]_probe.txt"
 
 ### Running Wessim
 
-There are two main scripts in the package - Wessim1.py and Wessim2.py. You will use Wessim1 if you are using a BED file for target regions (ideal target approach). However,  it is highly recommended to use Wessim2 (probe hybridization approach) when the probe sequence is available; it is much more realistic and recovers the statistics of real data. Two other scripts that start with 'Prep' are used to preparing Wessim2 inputs. You can ignore remaining scripts that start with '__sub'; main Wessim programs will execute these sub scripts automatically.
+There are two main scripts in the package - `Wessim1.py` and `Wessim2.py.` You 
+will use Wessim1 if you are using a BED file for target regions (ideal target 
+approach). However,  it is highly recommended to use Wessim2 (probe 
+hybridization approach) when the probe sequence is available; it is much more 
+realistic and recovers the statistics of real data. Two other scripts that start 
+with 'Prep' are used to preparing Wessim2 inputs. You can ignore remaining 
+scripts that start with '__sub'; main Wessim programs will execute these sub 
+scripts automatically.
 
 The basic synopsis of Wessim1 is like below:
-<pre><code>
+
+```bash
+# Generate the reference files needed to run Wessim1.py
+./get_region_vector.py \
+    --fasta-file reference.fa \
+    --target-bed-file target.bed \
+    --target-fasta-file target_reference.fa \
+    --target-abd-file target_reference.abd
+
 # Run Wessim1 in ideal target mode
->python Wessim1.py -R ref.fa -B target.bed -n 1000000 -l 100 -M model.gzip -z -o result -t 4
-</code></pre> 
+./Wessim1.py \
+    -R ref.fa \
+    --fasta-file reference.fa \
+    --target-bed-file target.bed \
+    -n 1000000 \
+    -l 100 \
+    -M model.gzip \
+    -z \
+    -o result \
+    -t 4
+```
+
 This will generate *result.fastq.gz* (single-end mode / gzip compressed) using 4 threads (CPU cores).
+
+
 
 For Wessim2:
 <pre><code>
