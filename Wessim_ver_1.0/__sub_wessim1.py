@@ -15,9 +15,19 @@ inds={'A':0,'T':1,'G':2,'C':3,'N':4,'a':0,'t':1,'g':2,'c':3,'n':4}
 def main(argv):
 	t0 = time()
 	parser = argparse.ArgumentParser(description='sub-wessim: a sub-program for Wessim1. (NOTE!) Do not run this program. Use "Wessim1.py" instead. ', prog='wessim1_sub', formatter_class=argparse.RawTextHelpFormatter)
+
 	group1 = parser.add_argument_group('Mandatory input files')
 	group1.add_argument('-R', metavar = 'FILE', dest='reference', required=True, help='(R)eference genome FASTA file')
-	group1.add_argument('-B', metavar = 'FILE', dest='region', required=True, help='Target region .(B)ED file')
+	group1.add_argument(
+		"--target-fasta-file",
+		help = "The target FASTA file generated from get_region_vector.py",
+		required = True
+	)
+	group1.add_argument(
+		"--target-abd-file",
+		help = "The target abd file generated from get_region_vector.py",
+		required = True
+	)
 
 	group2 = parser.add_argument_group('Parameters for exome capture')
 	group2.add_argument('-f', metavar = 'INT', type=int, dest='fragsize', required=False, help='mean (f)ragment size. this corresponds to insert size when sequencing in paired-end mode. [200]', default=200)
@@ -44,9 +54,8 @@ def main(argv):
 
 	args = parser.parse_args()
 	reffile = args.reference
-	regionfile = args.region
-	faoutfile = regionfile + ".fa"
-	abdoutfile = regionfile + ".abd"
+	faoutfile = args.target_fasta_file
+	abdoutfile = args.target_abd_file
 
 	isize = args.fragsize
 	isd = args.fragsd

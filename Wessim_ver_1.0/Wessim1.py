@@ -23,9 +23,19 @@ def main(argv):
 	t0 = time()
 	arguline = " ".join(argv)
 	parser = argparse.ArgumentParser(description='Wessim1: Whole Exome Sequencing SIMulator 1 (Ideal target region-based version)', prog='Wessim1', formatter_class=argparse.RawTextHelpFormatter)
+
 	group1 = parser.add_argument_group('Mandatory input files')
 	group1.add_argument('-R', metavar = 'FILE', dest='reference', required=True, help='faidx-indexed (R)eference genome FASTA file')
-	group1.add_argument('-B', metavar = 'FILE', dest='region', required=True, help='Target region .(B)ED file')
+	group1.add_argument(
+		"--target-fasta-file",
+		help = "The target FASTA file generated from get_region_vector.py",
+		required = True
+	)
+	group1.add_argument(
+		"--target-abd-file",
+		help = "The target abd file generated from get_region_vector.py",
+		required = True
+	)
 
 	group2 = parser.add_argument_group('Parameters for exome capture')
 	group2.add_argument('-f', metavar = 'INT', type=int, dest='fragsize', required=False, help='mean (f)ragment size. this corresponds to insert size when sequencing in paired-end mode. [200]', default=200)
@@ -49,14 +59,12 @@ def main(argv):
 
 	args = parser.parse_args()
 	reffile = args.reference
-	regionfile = args.region
 
 	isize = args.fragsize
 	isd = args.fragsd
 	imin = args.fragmin
 	slack = args.slack
 
-	getRegionVector(reffile, regionfile, slack)
 	paired = args.p
 	readlength = args.readlength
 	readnumber = args.readnumber
@@ -82,7 +90,8 @@ def main(argv):
 	print
 	print "-------------------------------------------"
 	print "Reference:", reffile
-	print "Region file:", regionfile
+	print "Target FASTA file:", args.target_fasta_file
+	print "Target ABD file:", args.target_abd_file
 	print "Fragment:",isize, "+-", isd, ">", imin
 	print "Paired-end mode?", paired
 	print "Sequencing model:", model
@@ -174,35 +183,6 @@ def main(argv):
 		wread.close()
 		wread2.close()
 	sys.exit(0)
-
-def getRegionVector(fastafile, regionfile, slack):
-	print "Generating fasta file for given regions..."
-	faoutfile = regionfile + ".fa"
-	abdoutfile = regionfile + ".abd"
-	ref = pysam.Fastafile(fastafile)
-	f = open(regionfile)
-	wfa = open(faoutfile, 'w')
-	wabd = open(abdoutfile, 'w')
-	i = f.readline()
-	abd = 0
-	while i:
-		i = f.readline()
-		values = i.split("\t")
-		if i.startswith("#") or len(values)<3:
-			continue
-		chrom = values[0]
-		start = max(int(values[1]) - slack, 1)
-		end = int(values[2]) + slack
-		header = ">" + chrom + "_" + str(start) + "_" + str(end)
-		x = ref.fetch(chrom, start, end)
-		length = len(x)
-		abd += length
-		wfa.write(header + "\n")
-		wfa.write(x + "\n")
-		wabd.write(str(abd) + "\n")
-	f.close()
-	wfa.close()
-	wabd.close()
 
 if __name__=="__main__":
 	main(sys.argv[1:])
