@@ -25,7 +25,6 @@ def main(argv):
 	parser = argparse.ArgumentParser(description='Wessim1: Whole Exome Sequencing SIMulator 1 (Ideal target region-based version)', prog='Wessim1', formatter_class=argparse.RawTextHelpFormatter)
 
 	group1 = parser.add_argument_group('Mandatory input files')
-	group1.add_argument('-R', metavar = 'FILE', dest='reference', required=True, help='faidx-indexed (R)eference genome FASTA file')
 	group1.add_argument(
 		"--target-fasta-file",
 		help = "The target FASTA file generated from get_region_vector.py",
@@ -58,7 +57,6 @@ def main(argv):
 	group4.add_argument('--read-name-prefix', dest='read_name_prefix', default = '_from_', required=False, help='Prefix to add to simulated read names (default: "%(default)s")')
 
 	args = parser.parse_args()
-	reffile = args.reference
 
 	isize = args.fragsize
 	isd = args.fragsd
@@ -89,7 +87,6 @@ def main(argv):
 
 	print
 	print "-------------------------------------------"
-	print "Reference:", reffile
 	print "Target FASTA file:", args.target_fasta_file
 	print "Target ABD file:", args.target_abd_file
 	print "Fragment:",isize, "+-", isd, ">", imin

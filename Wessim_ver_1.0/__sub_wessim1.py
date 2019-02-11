@@ -17,7 +17,6 @@ def main(argv):
 	parser = argparse.ArgumentParser(description='sub-wessim: a sub-program for Wessim1. (NOTE!) Do not run this program. Use "Wessim1.py" instead. ', prog='wessim1_sub', formatter_class=argparse.RawTextHelpFormatter)
 
 	group1 = parser.add_argument_group('Mandatory input files')
-	group1.add_argument('-R', metavar = 'FILE', dest='reference', required=True, help='(R)eference genome FASTA file')
 	group1.add_argument(
 		"--target-fasta-file",
 		help = "The target FASTA file generated from get_region_vector.py",
@@ -53,7 +52,6 @@ def main(argv):
 	group4.add_argument('--read-name-prefix', dest='read_name_prefix', default = '_from_', required=False, help='Prefix to add to simulated read names (default: "%(default)s")')
 
 	args = parser.parse_args()
-	reffile = args.reference
 	faoutfile = args.target_fasta_file
 	abdoutfile = args.target_abd_file
 
