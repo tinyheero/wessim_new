@@ -1,6 +1,13 @@
+This is a fork of https://github.com/sak042/Wessim
+
 ### Introduction
 
-**Wessim** is a simulator for a targeted resequencing as generally known as exome sequencing. Wessim basically generates a set of *artificial* DNA fragments for next generation sequencing (NGS) read simulation. In the targeted resequencing, we constraint the genomic regions that are used to generated DNA fragments to be only a part of the entire genome; they are usually exons and/or a few introns and untranslated regions (UTRs).
+**Wessim** is a simulator for a targeted resequencing as generally known as 
+exome sequencing. Wessim basically generates a set of *artificial* DNA fragments 
+for next generation sequencing (NGS) read simulation. In the targeted 
+resequencing, we constraint the genomic regions that are used to generated DNA 
+fragments to be only a part of the entire genome; they are usually exons and/or 
+a few introns and untranslated regions (UTRs).
 
 ### Install Wessim
 
